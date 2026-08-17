@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InvoiceSequence extends Model
 {
     protected $fillable = [
+        'business_id',
         'sequence_date',
         'next_number',
     ];
@@ -16,5 +18,10 @@ class InvoiceSequence extends Model
         return [
             'sequence_date' => 'date',
         ];
+    }
+
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
     }
 }

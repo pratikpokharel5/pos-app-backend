@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('sales', function (Blueprint $table): void {
             $table->id();
-            $table->string('invoice_number')->unique();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+            $table->string('invoice_number');
             $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('status')->default('completed');
@@ -27,7 +28,8 @@ return new class extends Migration
             $table->timestamp('sold_at')->useCurrent();
             $table->timestamps();
 
-            $table->index(['status', 'sold_at']);
+            $table->unique(['business_id', 'invoice_number']);
+            $table->index(['business_id', 'status', 'sold_at']);
             $table->index('customer_id');
             $table->index('user_id');
         });

@@ -14,6 +14,7 @@ class ReportController extends Controller
         $filters = $request->validated();
 
         return response()->json($reportService->salesSummary(
+            $this->businessId($request),
             $filters['from'] ?? null,
             $filters['to'] ?? null,
         ));
@@ -24,6 +25,7 @@ class ReportController extends Controller
         $filters = $request->validated();
 
         return response()->json($reportService->paymentSummary(
+            $this->businessId($request),
             $filters['from'] ?? null,
             $filters['to'] ?? null,
         ));
@@ -34,6 +36,7 @@ class ReportController extends Controller
         $filters = $request->validated();
 
         return response()->json($reportService->topProducts(
+            $this->businessId($request),
             $filters['from'] ?? null,
             $filters['to'] ?? null,
             (int) ($filters['limit'] ?? 10),

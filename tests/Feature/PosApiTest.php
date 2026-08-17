@@ -120,7 +120,14 @@ class PosApiTest extends TestCase
 
         $this->actingAs($admin, 'sanctum');
 
+        $categoryResponse = $this->postJson('/api/categories', [
+            'name' => 'Accessories',
+        ]);
+
+        $categoryResponse->assertCreated();
+
         $productResponse = $this->postJson('/api/products', [
+            'category_id' => $categoryResponse->json('data.id'),
             'name' => 'Keyboard',
             'price' => 2500,
         ]);

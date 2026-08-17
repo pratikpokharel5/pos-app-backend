@@ -4,17 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BusinessSetting extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'business_name',
-        'logo',
-        'address',
-        'phone',
-        'email',
+        'business_id',
         'tax_enabled',
         'default_tax_rate',
         'online_payment_enabled',
@@ -27,5 +24,10 @@ class BusinessSetting extends Model
             'default_tax_rate' => 'integer',
             'online_payment_enabled' => 'boolean',
         ];
+    }
+
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
     }
 }

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('sale_items', function (Blueprint $table): void {
             $table->id();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->foreignId('sale_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
             $table->string('item_name');
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->json('additional_details')->nullable();
             $table->timestamps();
 
-            $table->index('sale_id');
+            $table->index(['business_id', 'sale_id']);
             $table->index('product_id');
         });
     }

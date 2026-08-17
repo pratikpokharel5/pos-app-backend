@@ -18,10 +18,18 @@ class CustomFieldRequest extends FormRequest
      */
     public function rules(): array
     {
+        $businessId = $this->user()?->business_id;
         $customFieldId = $this->route('custom_field')?->id ?? $this->route('customField')?->id;
 
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('custom_fields', 'name')->ignore($customFieldId)],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('custom_fields', 'name')
+                    ->where('business_id', $businessId)
+                    ->ignore($customFieldId),
+            ],
             'label' => ['required', 'string', 'max:255'],
             'applies_to' => ['required', Rule::in(['sale', 'sale_item'])],
             'field_type' => ['required', Rule::in(['text', 'number', 'date', 'select'])],

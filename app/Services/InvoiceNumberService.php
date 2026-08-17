@@ -8,18 +8,20 @@ use Illuminate\Support\Facades\DB;
 
 class InvoiceNumberService
 {
-    public function next(CarbonInterface $date): string
+    public function next(int $businessId, CarbonInterface $date): string
     {
         $sequenceDate = $date->toDateString();
 
-        return DB::transaction(function () use ($date, $sequenceDate): string {
+        return DB::transaction(function () use ($businessId, $date, $sequenceDate): string {
             $sequence = InvoiceSequence::query()
+                ->where('business_id', $businessId)
                 ->where('sequence_date', $sequenceDate)
                 ->lockForUpdate()
                 ->first();
 
             if (! $sequence) {
                 InvoiceSequence::query()->create([
+                    'business_id' => $businessId,
                     'sequence_date' => $sequenceDate,
                     'next_number' => 2,
                 ]);

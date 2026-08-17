@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('custom_fields', function (Blueprint $table): void {
             $table->id();
-            $table->string('name')->unique();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+            $table->string('name');
             $table->string('label');
             $table->string('applies_to');
             $table->string('field_type')->default('text');
@@ -22,7 +23,8 @@ return new class extends Migration
             $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();
 
-            $table->index(['applies_to', 'is_active', 'sort_order']);
+            $table->unique(['business_id', 'name']);
+            $table->index(['business_id', 'applies_to', 'is_active', 'sort_order']);
         });
     }
 

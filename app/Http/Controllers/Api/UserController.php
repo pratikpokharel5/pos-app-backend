@@ -19,6 +19,7 @@ class UserController extends Controller
         $filters = $request->validated();
 
         $users = User::query()
+            ->where('business_id', $this->businessId($request))
             ->when($filters['search'] ?? null, function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
@@ -37,6 +38,7 @@ class UserController extends Controller
     public function store(UserRequest $request): UserResource
     {
         $data = $request->validated();
+        $data['business_id'] = $this->businessId($request);
         $data['role'] = 'staff';
         $data['status'] = $data['status'] ?? 'active';
 
@@ -46,6 +48,7 @@ class UserController extends Controller
     public function update(UserRequest $request, User $user): UserResource
     {
         $data = $request->validated();
+        abort_unless($user->business_id === $this->businessId($request), 404);
 
         if (
             $request->user()?->is($user) &&
@@ -71,6 +74,8 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user): Response
     {
+        abort_unless($user->business_id === $this->businessId($request), 404);
+
         if ($request->user()?->is($user)) {
             throw ValidationException::withMessages([
                 'user' => ['You cannot disable your own account.'],

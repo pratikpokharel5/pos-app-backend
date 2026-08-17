@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('customers', function (Blueprint $table): void {
             $table->id();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
@@ -21,9 +22,9 @@ return new class extends Migration
             $table->string('status')->default('active');
             $table->timestamps();
 
-            $table->index('name');
-            $table->index('phone');
-            $table->index('status');
+            $table->index(['business_id', 'name']);
+            $table->index(['business_id', 'phone']);
+            $table->index(['business_id', 'status']);
         });
     }
 

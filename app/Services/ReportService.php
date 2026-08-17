@@ -12,9 +12,11 @@ class ReportService
     /**
      * @return array<string, mixed>
      */
-    public function salesSummary(?string $from = null, ?string $to = null): array
+    public function salesSummary(int $businessId, ?string $from = null, ?string $to = null): array
     {
-        $query = Sale::query()->where('status', 'completed');
+        $query = Sale::query()
+            ->where('business_id', $businessId)
+            ->where('status', 'completed');
         $this->applyDateRange($query, $from, $to);
 
         return [
@@ -29,10 +31,11 @@ class ReportService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function paymentSummary(?string $from = null, ?string $to = null): array
+    public function paymentSummary(int $businessId, ?string $from = null, ?string $to = null): array
     {
         $query = Payment::query()
             ->select('method', DB::raw('COUNT(*) as payment_count'), DB::raw('SUM(amount) as total'))
+            ->where('business_id', $businessId)
             ->whereHas('sale', fn ($saleQuery) => $saleQuery->where('status', 'completed'))
             ->groupBy('method');
 
@@ -50,10 +53,11 @@ class ReportService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function topProducts(?string $from = null, ?string $to = null, int $limit = 10): array
+    public function topProducts(int $businessId, ?string $from = null, ?string $to = null, int $limit = 10): array
     {
         $query = DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->where('sales.business_id', $businessId)
             ->where('sales.status', 'completed')
             ->select(
                 'sale_items.item_name',

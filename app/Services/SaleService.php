@@ -20,17 +20,18 @@ class SaleService
     /**
      * @param  array<string, mixed>  $data
      */
-    public function create(array $data, ?int $userId = null): Sale
+    public function create(array $data, int $businessId, ?int $userId = null): Sale
     {
-        return DB::transaction(function () use ($data, $userId): Sale {
+        return DB::transaction(function () use ($data, $businessId, $userId): Sale {
             $soldAt = isset($data['sold_at']) ? Carbon::parse($data['sold_at']) : now();
-            $customerId = $this->resolveCustomerId($data);
-            $items = $this->normalizeItems($data['items']);
+            $customerId = $this->resolveCustomerId($data, $businessId);
+            $items = $this->normalizeItems($data['items'], $businessId);
             $totals = $this->calculateTotals($items, $data);
             $payments = $this->normalizePayments($data['payments'], $totals['grand_total']);
 
             $sale = Sale::query()->create([
-                'invoice_number' => $this->invoiceNumberService->next($soldAt),
+                'business_id' => $businessId,
+                'invoice_number' => $this->invoiceNumberService->next($businessId, $soldAt),
                 'customer_id' => $customerId,
                 'user_id' => $userId,
                 'status' => 'completed',
@@ -45,10 +46,14 @@ class SaleService
             ]);
 
             foreach ($items as $item) {
-                $saleItem = $sale->items()->create(Arr::except($item, ['custom_values']));
+                $saleItem = $sale->items()->create([
+                    ...Arr::except($item, ['custom_values']),
+                    'business_id' => $businessId,
+                ]);
 
                 foreach ($item['custom_values'] ?? [] as $customValue) {
                     CustomFieldValue::query()->create([
+                        'business_id' => $businessId,
                         'custom_field_id' => $customValue['custom_field_id'],
                         'sale_item_id' => $saleItem->id,
                         'value' => $customValue['value'] ?? null,
@@ -57,11 +62,15 @@ class SaleService
             }
 
             foreach ($payments as $payment) {
-                $sale->payments()->create($payment);
+                $sale->payments()->create([
+                    ...$payment,
+                    'business_id' => $businessId,
+                ]);
             }
 
             foreach ($data['custom_values'] ?? [] as $customValue) {
                 CustomFieldValue::query()->create([
+                    'business_id' => $businessId,
                     'custom_field_id' => $customValue['custom_field_id'],
                     'sale_id' => $sale->id,
                     'value' => $customValue['value'] ?? null,
@@ -82,10 +91,11 @@ class SaleService
     /**
      * @param  array<string, mixed>  $data
      */
-    private function resolveCustomerId(array $data): ?int
+    private function resolveCustomerId(array $data, int $businessId): ?int
     {
         if (! empty($data['customer_id'])) {
             $customer = Customer::query()
+                ->where('business_id', $businessId)
                 ->where('status', 'active')
                 ->find($data['customer_id']);
 
@@ -102,7 +112,10 @@ class SaleService
             return null;
         }
 
-        $customer = Customer::query()->create($data['customer']);
+        $customer = Customer::query()->create([
+            ...$data['customer'],
+            'business_id' => $businessId,
+        ]);
 
         return $customer->id;
     }
@@ -111,13 +124,14 @@ class SaleService
      * @param  array<int, array<string, mixed>>  $items
      * @return array<int, array<string, mixed>>
      */
-    private function normalizeItems(array $items): array
+    private function normalizeItems(array $items, int $businessId): array
     {
-        return collect($items)->map(function (array $item): array {
+        return collect($items)->map(function (array $item) use ($businessId): array {
             $product = null;
 
             if (! empty($item['product_id'])) {
                 $product = Product::query()
+                    ->where('business_id', $businessId)
                     ->where('status', 'active')
                     ->find($item['product_id']);
 

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table): void {
             $table->id();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->foreignId('sale_id')->constrained()->cascadeOnDelete();
             $table->string('method');
             $table->decimal('amount', 12, 2);
@@ -21,7 +22,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->index(['method', 'created_at']);
+            $table->index(['business_id', 'method', 'created_at']);
             $table->index('sale_id');
         });
     }

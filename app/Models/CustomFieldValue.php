@@ -11,6 +11,7 @@ class CustomFieldValue extends Model
     use HasFactory;
 
     protected $fillable = [
+        'business_id',
         'custom_field_id',
         'sale_id',
         'sale_item_id',
@@ -20,6 +21,11 @@ class CustomFieldValue extends Model
     public function customField(): BelongsTo
     {
         return $this->belongsTo(CustomField::class);
+    }
+
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
     }
 
     public function sale(): BelongsTo

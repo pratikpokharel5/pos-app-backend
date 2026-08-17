@@ -16,6 +16,10 @@ class EnsureUserIsActive
             abort(403, 'This user account is inactive.');
         }
 
+        if ($user->business?->status !== 'active') {
+            abort(403, 'This business account is inactive.');
+        }
+
         return $next($request);
     }
 }

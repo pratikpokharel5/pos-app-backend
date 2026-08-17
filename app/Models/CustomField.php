@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CustomField extends Model
@@ -11,6 +12,7 @@ class CustomField extends Model
     use HasFactory;
 
     protected $fillable = [
+        'business_id',
         'name',
         'label',
         'applies_to',
@@ -31,5 +33,10 @@ class CustomField extends Model
     public function values(): HasMany
     {
         return $this->hasMany(CustomFieldValue::class);
+    }
+
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
     }
 }

@@ -18,11 +18,16 @@ class StoreSaleRequest extends FormRequest
      */
     public function rules(): array
     {
+        $businessId = $this->user()?->business_id;
+
         return [
-            'customer_id' => ['nullable', 'exists:customers,id'],
+            'customer_id' => [
+                'nullable',
+                Rule::exists('customers', 'id')->where('business_id', $businessId),
+            ],
             'customer' => ['nullable', 'array'],
             'customer.name' => ['required_with:customer', 'string', 'max:255'],
-            'customer.phone' => ['nullable', 'string', 'max:50'],
+            'customer.phone' => ['required_with:customer', 'string', 'max:50'],
             'customer.email' => ['nullable', 'email', 'max:255'],
             'customer.address' => ['nullable', 'string'],
             'customer.notes' => ['nullable', 'string'],
@@ -33,7 +38,10 @@ class StoreSaleRequest extends FormRequest
             'sold_at' => ['nullable', 'date'],
 
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['nullable', 'exists:products,id'],
+            'items.*.product_id' => [
+                'nullable',
+                Rule::exists('products', 'id')->where('business_id', $businessId),
+            ],
             'items.*.item_name' => ['required_without:items.*.product_id', 'nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
@@ -41,7 +49,10 @@ class StoreSaleRequest extends FormRequest
             'items.*.notes' => ['nullable', 'string'],
             'items.*.additional_details' => ['nullable', 'array'],
             'items.*.custom_values' => ['nullable', 'array'],
-            'items.*.custom_values.*.custom_field_id' => ['required_with:items.*.custom_values', 'exists:custom_fields,id'],
+            'items.*.custom_values.*.custom_field_id' => [
+                'required_with:items.*.custom_values',
+                Rule::exists('custom_fields', 'id')->where('business_id', $businessId),
+            ],
             'items.*.custom_values.*.value' => ['nullable', 'string'],
 
             'payments' => ['required', 'array', 'min:1'],
@@ -52,7 +63,10 @@ class StoreSaleRequest extends FormRequest
             'payments.*.notes' => ['nullable', 'string'],
 
             'custom_values' => ['nullable', 'array'],
-            'custom_values.*.custom_field_id' => ['required_with:custom_values', 'exists:custom_fields,id'],
+            'custom_values.*.custom_field_id' => [
+                'required_with:custom_values',
+                Rule::exists('custom_fields', 'id')->where('business_id', $businessId),
+            ],
             'custom_values.*.value' => ['nullable', 'string'],
         ];
     }

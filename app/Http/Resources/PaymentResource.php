@@ -14,6 +14,7 @@ class PaymentResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'business_id' => $this->business_id,
             'sale_id' => $this->sale_id,
             'method' => $this->method,
             'amount' => $this->amount,

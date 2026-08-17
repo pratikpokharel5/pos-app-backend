@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [AuthController::class, 'login']);
+Route::post('auth/register', [AuthController::class, 'register']);
 
 Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('auth/me', [AuthController::class, 'me']);
@@ -26,20 +27,23 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
 
     Route::apiResource('categories', CategoryController::class)
         ->only(['index', 'show']);
+    Route::post('categories/import', [CategoryController::class, 'import'])
+        ->middleware('role:admin');
     Route::apiResource('categories', CategoryController::class)
         ->except(['index', 'show'])
         ->middleware('role:admin');
 
     Route::apiResource('products', ProductController::class)
         ->only(['index', 'show']);
+    Route::post('products/import', [ProductController::class, 'import'])
+        ->middleware('role:admin');
     Route::apiResource('products', ProductController::class)
         ->except(['index', 'show'])
         ->middleware('role:admin');
 
     Route::apiResource('customers', CustomerController::class)
-        ->only(['index', 'show']);
-    Route::apiResource('customers', CustomerController::class)
-        ->except(['index', 'show'])
+        ->except(['destroy']);
+    Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
         ->middleware('role:admin');
 
     Route::apiResource('custom-fields', CustomFieldController::class)
@@ -51,12 +55,12 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         ->middleware('role:admin');
     Route::apiResource('sales', SaleController::class)->only(['index', 'store', 'show']);
 
+    Route::get('reports/sales-summary', [ReportController::class, 'salesSummary']);
+    Route::get('reports/payment-summary', [ReportController::class, 'paymentSummary']);
+    Route::get('reports/top-products', [ReportController::class, 'topProducts']);
+
     Route::middleware('role:admin')->group(function (): void {
         Route::apiResource('users', UserController::class)
             ->except(['show']);
-
-        Route::get('reports/sales-summary', [ReportController::class, 'salesSummary']);
-        Route::get('reports/payment-summary', [ReportController::class, 'paymentSummary']);
-        Route::get('reports/top-products', [ReportController::class, 'topProducts']);
     });
 });

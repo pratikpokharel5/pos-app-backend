@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('invoice_sequences', function (Blueprint $table): void {
             $table->id();
-            $table->date('sequence_date')->unique();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
+            $table->date('sequence_date');
             $table->unsignedInteger('next_number')->default(1);
             $table->timestamps();
+
+            $table->unique(['business_id', 'sequence_date']);
         });
     }
 

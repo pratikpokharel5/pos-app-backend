@@ -17,8 +17,18 @@ class CategoryRequest extends FormRequest
      */
     public function rules(): array
     {
+        $businessId = $this->user()?->business_id;
+        $categoryId = $this->route('category')?->id;
+
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('categories', 'name')
+                    ->where('business_id', $businessId)
+                    ->ignore($categoryId),
+            ],
             'description' => ['nullable', 'string'],
             'status' => ['sometimes', Rule::in(['active', 'inactive'])],
         ];

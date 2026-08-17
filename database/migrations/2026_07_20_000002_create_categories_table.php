@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table): void {
             $table->id();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('status')->default('active');
             $table->timestamps();
 
-            $table->index(['status', 'name']);
+            $table->index(['business_id', 'status', 'name']);
+            $table->unique(['business_id', 'name']);
         });
     }
 

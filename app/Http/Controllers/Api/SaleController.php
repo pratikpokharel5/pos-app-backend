@@ -9,6 +9,7 @@ use App\Http\Resources\SaleResource;
 use App\Models\Sale;
 use App\Services\SaleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SaleController extends Controller
@@ -18,6 +19,7 @@ class SaleController extends Controller
         $filters = $request->validated();
 
         $sales = Sale::query()
+            ->where('business_id', $this->businessId($request))
             ->with(['customer', 'user', 'payments'])
             ->when($filters['search'] ?? null, function ($query, $search): void {
                 $query->where(function ($nested) use ($search): void {
@@ -43,13 +45,19 @@ class SaleController extends Controller
 
     public function store(StoreSaleRequest $request, SaleService $saleService): SaleResource
     {
-        $sale = $saleService->create($request->validated(), $request->user()?->id);
+        $sale = $saleService->create(
+            $request->validated(),
+            $this->businessId($request),
+            $request->user()?->id,
+        );
 
         return new SaleResource($sale);
     }
 
-    public function show(Sale $sale): SaleResource
+    public function show(Request $request, Sale $sale): SaleResource
     {
+        abort_unless($sale->business_id === $this->businessId($request), 404);
+
         return new SaleResource($sale->load([
             'customer',
             'user',
@@ -60,13 +68,15 @@ class SaleController extends Controller
         ]));
     }
 
-    public function invoice(Sale $sale): SaleResource
+    public function invoice(Request $request, Sale $sale): SaleResource
     {
-        return $this->show($sale);
+        return $this->show($request, $sale);
     }
 
-    public function void(Sale $sale): JsonResponse
+    public function void(Request $request, Sale $sale): JsonResponse
     {
+        abort_unless($sale->business_id === $this->businessId($request), 404);
+
         if ($sale->status !== 'completed') {
             return response()->json([
                 'message' => 'Only completed sales can be voided.',

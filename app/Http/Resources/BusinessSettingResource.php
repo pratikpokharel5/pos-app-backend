@@ -14,11 +14,12 @@ class BusinessSettingResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'business_name' => $this->business_name,
-            'logo' => $this->logo,
-            'address' => $this->address,
-            'phone' => $this->phone,
-            'email' => $this->email,
+            'business_id' => $this->business_id,
+            'business_name' => $this->business->name,
+            'logo' => $this->business->logo,
+            'address' => $this->business->address,
+            'phone' => $this->business->phone,
+            'email' => $this->business->email,
             'tax_enabled' => $this->tax_enabled,
             'default_tax_rate' => $this->default_tax_rate,
             'online_payment_enabled' => $this->online_payment_enabled,

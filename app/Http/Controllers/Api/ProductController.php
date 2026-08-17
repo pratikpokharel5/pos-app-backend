@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CatalogIndexRequest;
+use App\Http\Requests\Api\ProductImportRequest;
 use App\Http\Requests\Api\ProductRequest;
 use App\Http\Resources\ProductResource;
+use App\Imports\ProductImport;
 use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -17,6 +22,7 @@ class ProductController extends Controller
         $filters = $request->validated();
 
         $products = Product::query()
+            ->where('business_id', $this->businessId($request))
             ->with('category')
             ->when($filters['search'] ?? null, function ($query, $search): void {
                 $query->where(function ($nested) use ($search): void {
@@ -34,25 +40,43 @@ class ProductController extends Controller
 
     public function store(ProductRequest $request): ProductResource
     {
-        $product = Product::query()->create($request->validated());
+        $product = Product::query()->create([
+            ...$request->validated(),
+            'business_id' => $this->businessId($request),
+        ]);
 
         return new ProductResource($product->load('category'));
     }
 
-    public function show(Product $product): ProductResource
+    public function import(ProductImportRequest $request): JsonResource
     {
+        $import = new ProductImport($this->businessId($request));
+
+        Excel::import($import, $request->file('file'));
+
+        return new JsonResource($import->summary());
+    }
+
+    public function show(Request $request, Product $product): ProductResource
+    {
+        abort_unless($product->business_id === $this->businessId($request), 404);
+
         return new ProductResource($product->load('category'));
     }
 
     public function update(ProductRequest $request, Product $product): ProductResource
     {
+        abort_unless($product->business_id === $this->businessId($request), 404);
+
         $product->update($request->validated());
 
         return new ProductResource($product->load('category'));
     }
 
-    public function destroy(Product $product): Response
+    public function destroy(Request $request, Product $product): Response
     {
+        abort_unless($product->business_id === $this->businessId($request), 404);
+
         $product->update(['status' => 'inactive']);
 
         return response()->noContent();

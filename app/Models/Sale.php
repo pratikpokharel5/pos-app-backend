@@ -12,6 +12,7 @@ class Sale extends Model
     use HasFactory;
 
     protected $fillable = [
+        'business_id',
         'invoice_number',
         'customer_id',
         'user_id',
@@ -42,6 +43,11 @@ class Sale extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function business(): BelongsTo
+    {
+        return $this->belongsTo(Business::class);
     }
 
     public function user(): BelongsTo

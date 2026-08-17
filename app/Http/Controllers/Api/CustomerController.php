@@ -7,6 +7,7 @@ use App\Http\Requests\Api\CatalogIndexRequest;
 use App\Http\Requests\Api\CustomerRequest;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
@@ -17,6 +18,7 @@ class CustomerController extends Controller
         $filters = $request->validated();
 
         $customers = Customer::query()
+            ->where('business_id', $this->businessId($request))
             ->when($filters['search'] ?? null, function ($query, $search): void {
                 $query->where(function ($nested) use ($search): void {
                     $nested->where('name', 'like', "%{$search}%")
@@ -33,23 +35,32 @@ class CustomerController extends Controller
 
     public function store(CustomerRequest $request): CustomerResource
     {
-        return new CustomerResource(Customer::query()->create($request->validated()));
+        return new CustomerResource(Customer::query()->create([
+            ...$request->validated(),
+            'business_id' => $this->businessId($request),
+        ]));
     }
 
-    public function show(Customer $customer): CustomerResource
+    public function show(Request $request, Customer $customer): CustomerResource
     {
+        abort_unless($customer->business_id === $this->businessId($request), 404);
+
         return new CustomerResource($customer);
     }
 
     public function update(CustomerRequest $request, Customer $customer): CustomerResource
     {
+        abort_unless($customer->business_id === $this->businessId($request), 404);
+
         $customer->update($request->validated());
 
         return new CustomerResource($customer);
     }
 
-    public function destroy(Customer $customer): Response
+    public function destroy(Request $request, Customer $customer): Response
     {
+        abort_unless($customer->business_id === $this->businessId($request), 404);
+
         $customer->update(['status' => 'inactive']);
 
         return response()->noContent();

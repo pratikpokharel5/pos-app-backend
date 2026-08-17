@@ -13,15 +13,13 @@ return new class extends Migration
     {
         Schema::create('business_settings', function (Blueprint $table): void {
             $table->id();
-            $table->string('business_name')->default('SalePoint');
-            $table->string('logo')->nullable();
-            $table->string('address')->nullable();
-            $table->string('phone');
-            $table->string('email')->nullable();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->boolean('tax_enabled')->default(false);
             $table->unsignedTinyInteger('default_tax_rate')->default(0);
             $table->boolean('online_payment_enabled')->default(true);
             $table->timestamps();
+
+            $table->unique('business_id');
         });
     }
 
