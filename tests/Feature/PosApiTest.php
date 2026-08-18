@@ -156,6 +156,98 @@ class PosApiTest extends TestCase
             ->assertJsonPath('data.grand_total', '2500.00');
     }
 
+    public function test_sale_can_use_split_payments(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin, 'sanctum');
+
+        $saleResponse = $this->postJson('/api/sales', [
+            'items' => [
+                [
+                    'item_name' => 'Custom Item',
+                    'quantity' => 1,
+                    'unit_price' => 1000,
+                ],
+            ],
+            'payments' => [
+                [
+                    'method' => 'cash',
+                    'amount' => 400,
+                ],
+                [
+                    'method' => 'online',
+                    'amount' => 600,
+                    'provider' => 'Fonepay',
+                    'transaction_reference' => 'FP-001',
+                ],
+            ],
+        ]);
+
+        $saleResponse
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'completed')
+            ->assertJsonPath('data.payments.0.method', 'cash')
+            ->assertJsonPath('data.payments.1.method', 'online')
+            ->assertJsonPath('data.payments.1.provider', 'Fonepay');
+    }
+
+    public function test_sale_can_be_held_without_payments(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin, 'sanctum');
+
+        $saleResponse = $this->postJson('/api/sales', [
+            'status' => 'held',
+            'items' => [
+                [
+                    'item_name' => 'Held Item',
+                    'quantity' => 2,
+                    'unit_price' => 150,
+                ],
+            ],
+            'payments' => [],
+        ]);
+
+        $saleResponse
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'held')
+            ->assertJsonCount(0, 'data.payments');
+    }
+
+    public function test_held_sale_can_be_unheld(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin, 'sanctum');
+
+        $saleResponse = $this->postJson('/api/sales', [
+            'status' => 'held',
+            'items' => [
+                [
+                    'item_name' => 'Held Item',
+                    'quantity' => 1,
+                    'unit_price' => 200,
+                ],
+            ],
+        ]);
+
+        $saleResponse->assertCreated();
+
+        $this->deleteJson("/api/sales/{$saleResponse->json('data.id')}/hold")
+            ->assertSuccessful();
+
+        $this->getJson("/api/sales/{$saleResponse->json('data.id')}")
+            ->assertNotFound();
+    }
+
     public function test_custom_sale_items_require_unit_price(): void
     {
         $admin = User::factory()->create([

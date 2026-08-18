@@ -19,7 +19,7 @@ class SaleIndexRequest extends FormRequest
     {
         return [
             'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', Rule::in(['completed', 'voided', 'refunded'])],
+            'status' => ['nullable', Rule::in(['completed', 'held', 'voided', 'refunded'])],
             'payment_method' => ['nullable', Rule::in(['cash', 'online'])],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],

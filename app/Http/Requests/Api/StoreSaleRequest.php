@@ -21,6 +21,7 @@ class StoreSaleRequest extends FormRequest
         $businessId = $this->user()?->business_id;
 
         return [
+            'status' => ['nullable', Rule::in(['completed', 'held'])],
             'customer_id' => [
                 'nullable',
                 Rule::exists('customers', 'id')->where('business_id', $businessId),
@@ -55,9 +56,9 @@ class StoreSaleRequest extends FormRequest
             ],
             'items.*.custom_values.*.value' => ['nullable', 'string'],
 
-            'payments' => ['required', 'array', 'min:1'],
+            'payments' => ['nullable', 'array'],
             'payments.*.method' => ['required', Rule::in(['cash', 'online'])],
-            'payments.*.amount' => ['required', 'numeric', 'min:0'],
+            'payments.*.amount' => ['required', 'numeric', 'gt:0'],
             'payments.*.provider' => ['nullable', 'string', 'max:255'],
             'payments.*.transaction_reference' => ['nullable', 'string', 'max:255'],
             'payments.*.notes' => ['nullable', 'string'],
@@ -79,6 +80,13 @@ class StoreSaleRequest extends FormRequest
                     $validator->errors()->add(
                         'customer',
                         'Use either an existing customer or a new customer, not both.'
+                    );
+                }
+
+                if ($this->input('status', 'completed') === 'completed' && count($this->input('payments', [])) < 1) {
+                    $validator->errors()->add(
+                        'payments',
+                        'Add at least one payment before saving the sale.'
                     );
                 }
 

@@ -51,6 +51,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         ->middleware('role:admin');
 
     Route::get('sales/{sale}/invoice', [SaleController::class, 'invoice']);
+    Route::delete('sales/{sale}/hold', [SaleController::class, 'unhold']);
     Route::post('sales/{sale}/void', [SaleController::class, 'void'])
         ->middleware('role:admin');
     Route::apiResource('sales', SaleController::class)->only(['index', 'store', 'show']);

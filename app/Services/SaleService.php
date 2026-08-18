@@ -27,14 +27,19 @@ class SaleService
             $customerId = $this->resolveCustomerId($data, $businessId);
             $items = $this->normalizeItems($data['items'], $businessId);
             $totals = $this->calculateTotals($items, $data);
-            $payments = $this->normalizePayments($data['payments'], $totals['grand_total']);
+            $status = $data['status'] ?? 'completed';
+            $payments = $this->normalizePayments(
+                $data['payments'] ?? [],
+                $totals['grand_total'],
+                $status === 'completed',
+            );
 
             $sale = Sale::query()->create([
                 'business_id' => $businessId,
                 'invoice_number' => $this->invoiceNumberService->next($businessId, $soldAt),
                 'customer_id' => $customerId,
                 'user_id' => $userId,
-                'status' => 'completed',
+                'status' => $status,
                 'subtotal' => $totals['subtotal'],
                 'discount_amount' => $totals['discount_amount'],
                 'tax_rate' => $totals['tax_rate'],
@@ -209,11 +214,11 @@ class SaleService
      * @param  array<int, array<string, mixed>>  $payments
      * @return array<int, array<string, mixed>>
      */
-    private function normalizePayments(array $payments, float $grandTotal): array
+    private function normalizePayments(array $payments, float $grandTotal, bool $totalMustMatch = true): array
     {
         $paymentTotal = round((float) collect($payments)->sum('amount'), 2);
 
-        if ($paymentTotal !== round($grandTotal, 2)) {
+        if ($totalMustMatch && $paymentTotal !== round($grandTotal, 2)) {
             throw ValidationException::withMessages([
                 'payments' => 'Payment total must match the sale grand total.',
             ]);

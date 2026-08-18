@@ -90,4 +90,21 @@ class SaleController extends Controller
             'sale' => new SaleResource($sale->refresh()->load(['customer', 'items', 'payments'])),
         ]);
     }
+
+    public function unhold(Request $request, Sale $sale): JsonResponse
+    {
+        abort_unless($sale->business_id === $this->businessId($request), 404);
+
+        if ($sale->status !== 'held') {
+            return response()->json([
+                'message' => 'Only held sales can be unheld.',
+            ], 422);
+        }
+
+        $sale->delete();
+
+        return response()->json([
+            'message' => 'Held sale removed successfully.',
+        ]);
+    }
 }
