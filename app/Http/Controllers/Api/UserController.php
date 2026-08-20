@@ -5,11 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UserIndexRequest;
 use App\Http\Requests\Api\UserRequest;
+use App\Http\Requests\Api\UserStatusRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
@@ -20,14 +19,7 @@ class UserController extends Controller
 
         $users = User::query()
             ->where('business_id', $this->businessId($request))
-            ->when($filters['search'] ?? null, function ($query, string $search): void {
-                $query->where(function ($query) use ($search): void {
-                    $query
-                        ->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
-            ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
+            ->filter($filters)
             ->orderByRaw("role = 'admin' desc")
             ->orderBy('name')
             ->paginate((int) ($filters['per_page'] ?? 15));
@@ -37,54 +29,32 @@ class UserController extends Controller
 
     public function store(UserRequest $request): UserResource
     {
-        $data = $request->validated();
-        $data['business_id'] = $this->businessId($request);
-        $data['role'] = 'staff';
-        $data['status'] = $data['status'] ?? 'active';
-
-        return new UserResource(User::query()->create($data));
+        return new UserResource(User::query()->create([
+            ...$request->validated(),
+            'business_id' => $this->businessId($request),
+            'role' => 'staff',
+            'status' => 'active',
+        ]));
     }
 
-    public function update(UserRequest $request, User $user): UserResource
+    public function updateStatus(UserStatusRequest $request, User $user): UserResource
     {
-        $data = $request->validated();
         abort_unless($user->business_id === $this->businessId($request), 404);
 
-        if (
-            $request->user()?->is($user) &&
-            ($data['status'] ?? $user->status) === 'inactive'
-        ) {
+        $data = $request->validated();
+
+        if ($request->user()?->is($user) && $data['status'] === 'inactive') {
             throw ValidationException::withMessages([
                 'user' => ['You cannot disable your own account.'],
             ]);
-        }
-
-        if (blank($data['password'] ?? null)) {
-            unset($data['password']);
         }
 
         $user->update($data);
 
-        if (($data['status'] ?? null) === 'inactive') {
+        if ($data['status'] === 'inactive') {
             $user->tokens()->delete();
         }
 
         return new UserResource($user);
-    }
-
-    public function destroy(Request $request, User $user): Response
-    {
-        abort_unless($user->business_id === $this->businessId($request), 404);
-
-        if ($request->user()?->is($user)) {
-            throw ValidationException::withMessages([
-                'user' => ['You cannot disable your own account.'],
-            ]);
-        }
-
-        $user->update(['status' => 'inactive']);
-        $user->tokens()->delete();
-
-        return response()->noContent();
     }
 }

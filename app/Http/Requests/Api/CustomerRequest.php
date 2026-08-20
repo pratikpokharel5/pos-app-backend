@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class CustomerRequest extends FormRequest
 {
@@ -19,11 +18,10 @@ class CustomerRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            'phone' => ['required', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
-            'status' => ['sometimes', Rule::in(['active', 'inactive'])],
         ];
     }
 }

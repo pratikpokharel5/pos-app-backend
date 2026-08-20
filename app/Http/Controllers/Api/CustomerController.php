@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CatalogIndexRequest;
 use App\Http\Requests\Api\CustomerRequest;
+use App\Http\Requests\Api\CustomerStatusRequest;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
 
 class CustomerController extends Controller
 {
@@ -19,14 +19,7 @@ class CustomerController extends Controller
 
         $customers = Customer::query()
             ->where('business_id', $this->businessId($request))
-            ->when($filters['search'] ?? null, function ($query, $search): void {
-                $query->where(function ($nested) use ($search): void {
-                    $nested->where('name', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->filter($filters)
             ->latest()
             ->paginate((int) ($filters['per_page'] ?? 15));
 
@@ -57,12 +50,12 @@ class CustomerController extends Controller
         return new CustomerResource($customer);
     }
 
-    public function destroy(Request $request, Customer $customer): Response
+    public function updateStatus(CustomerStatusRequest $request, Customer $customer): CustomerResource
     {
         abort_unless($customer->business_id === $this->businessId($request), 404);
 
-        $customer->update(['status' => 'inactive']);
+        $customer->update($request->validated());
 
-        return response()->noContent();
+        return new CustomerResource($customer);
     }
 }

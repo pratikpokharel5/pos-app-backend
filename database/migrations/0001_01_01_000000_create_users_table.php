@@ -29,7 +29,11 @@ return new class extends Migration
             $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('email')->nullable()->unique();
+
+            // Although phone is nullable, it is a required field which is validated in the controller. 
+            // It is nullable here to allow for existing user records that may not have a phone number.
             $table->string('phone')->nullable()->unique();
+
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('role')->default('staff');

@@ -24,10 +24,10 @@ class SaleService
     {
         return DB::transaction(function () use ($data, $businessId, $userId): Sale {
             $soldAt = isset($data['sold_at']) ? Carbon::parse($data['sold_at']) : now();
-            $customerId = $this->resolveCustomerId($data, $businessId);
+            $status = $data['status'] ?? 'completed';
+            $customerId = $this->resolveCustomerId($data, $businessId, $status);
             $items = $this->normalizeItems($data['items'], $businessId);
             $totals = $this->calculateTotals($items, $data);
-            $status = $data['status'] ?? 'completed';
             $payments = $this->normalizePayments(
                 $data['payments'] ?? [],
                 $totals['grand_total'],
@@ -96,7 +96,7 @@ class SaleService
     /**
      * @param  array<string, mixed>  $data
      */
-    private function resolveCustomerId(array $data, int $businessId): ?int
+    private function resolveCustomerId(array $data, int $businessId, string $status): ?int
     {
         if (! empty($data['customer_id'])) {
             $customer = Customer::query()
@@ -111,6 +111,10 @@ class SaleService
             }
 
             return $customer->id;
+        }
+
+        if ($status === 'held') {
+            return null;
         }
 
         if (empty($data['customer'])) {

@@ -17,6 +17,7 @@ class ReportService
         $query = Sale::query()
             ->where('business_id', $businessId)
             ->where('status', 'completed');
+
         $this->applyDateRange($query, $from, $to);
 
         return [
@@ -36,14 +37,14 @@ class ReportService
         $query = Payment::query()
             ->select('method', DB::raw('COUNT(*) as payment_count'), DB::raw('SUM(amount) as total'))
             ->where('business_id', $businessId)
-            ->whereHas('sale', fn ($saleQuery) => $saleQuery->where('status', 'completed'))
+            ->whereHas('sale', fn($saleQuery) => $saleQuery->where('status', 'completed'))
             ->groupBy('method');
 
         if ($from || $to) {
-            $query->whereHas('sale', fn ($saleQuery) => $this->applyDateRange($saleQuery, $from, $to));
+            $query->whereHas('sale', fn($saleQuery) => $this->applyDateRange($saleQuery, $from, $to));
         }
 
-        return $query->get()->map(fn (Payment $payment): array => [
+        return $query->get()->map(fn(Payment $payment): array => [
             'method' => $payment->method,
             'payment_count' => (int) $payment->payment_count,
             'total' => (float) $payment->total,
@@ -76,7 +77,7 @@ class ReportService
             $query->where('sales.sold_at', '<=', Carbon::parse($to)->endOfDay());
         }
 
-        return $query->get()->map(fn (object $row): array => [
+        return $query->get()->map(fn(object $row): array => [
             'item_name' => $row->item_name,
             'quantity_sold' => (float) $row->quantity_sold,
             'revenue' => (float) $row->revenue,

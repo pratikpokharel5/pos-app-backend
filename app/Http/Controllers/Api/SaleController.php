@@ -20,6 +20,7 @@ class SaleController extends Controller
 
         $sales = Sale::query()
             ->where('business_id', $this->businessId($request))
+            ->where('status', '!=', 'held')
             ->with(['customer', 'user', 'payments'])
             ->when($filters['search'] ?? null, function ($query, $search): void {
                 $query->where(function ($nested) use ($search): void {
@@ -39,6 +40,18 @@ class SaleController extends Controller
             ->when($filters['to'] ?? null, fn ($query, $to) => $query->whereDate('sold_at', '<=', $to))
             ->latest('sold_at')
             ->paginate((int) ($filters['per_page'] ?? 15));
+
+        return SaleResource::collection($sales);
+    }
+
+    public function held(Request $request): AnonymousResourceCollection
+    {
+        $sales = Sale::query()
+            ->where('business_id', $this->businessId($request))
+            ->where('status', 'held')
+            ->with(['customer', 'user', 'payments'])
+            ->latest('sold_at')
+            ->paginate((int) ($request->integer('per_page') ?: 100));
 
         return SaleResource::collection($sales);
     }
@@ -70,7 +83,17 @@ class SaleController extends Controller
 
     public function invoice(Request $request, Sale $sale): SaleResource
     {
-        return $this->show($request, $sale);
+        abort_unless($sale->business_id === $this->businessId($request), 404);
+        abort_unless($sale->status === 'completed', 404);
+
+        return new SaleResource($sale->load([
+            'customer',
+            'user',
+            'items.product.category',
+            'items.customFieldValues.customField',
+            'payments',
+            'customFieldValues.customField',
+        ]));
     }
 
     public function void(Request $request, Sale $sale): JsonResponse

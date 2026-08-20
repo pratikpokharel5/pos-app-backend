@@ -14,9 +14,12 @@ class DashboardController extends Controller
     public function summary(Request $request, ReportService $reportService): JsonResponse
     {
         $today = now()->toDateString();
+
         $businessId = $this->businessId($request);
+
         $recentSales = Sale::query()
             ->where('business_id', $businessId)
+            ->where('status', '!=', 'held')
             ->with(['customer', 'payments'])
             ->latest('sold_at')
             ->limit(5)

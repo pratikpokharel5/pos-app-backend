@@ -43,13 +43,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
 
     Route::apiResource('customers', CustomerController::class)
         ->except(['destroy']);
-    Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])
+    Route::patch('customers/{customer}/status', [CustomerController::class, 'updateStatus'])
         ->middleware('role:admin');
 
     Route::apiResource('custom-fields', CustomFieldController::class)
         ->parameters(['custom-fields' => 'customField'])
         ->middleware('role:admin');
 
+    Route::get('sales/held', [SaleController::class, 'held']);
     Route::get('sales/{sale}/invoice', [SaleController::class, 'invoice']);
     Route::delete('sales/{sale}/hold', [SaleController::class, 'unhold']);
     Route::post('sales/{sale}/void', [SaleController::class, 'void'])
@@ -61,7 +62,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('reports/top-products', [ReportController::class, 'topProducts']);
 
     Route::middleware('role:admin')->group(function (): void {
+        Route::patch('users/{user}/status', [UserController::class, 'updateStatus']);
         Route::apiResource('users', UserController::class)
-            ->except(['show']);
+            ->except(['show', 'update', 'destroy']);
     });
 });
